@@ -113,5 +113,10 @@ interface Context {
   send: (data: string, contentType?: string) => void;
 }
 
+type handlerResult =  {
+  body: JSON,
+  status: number
+}
+
 
 export { StatusCodes, contentTypes, Context, ServerOptions, Route };

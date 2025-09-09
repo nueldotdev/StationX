@@ -81,7 +81,7 @@ if (args === "start") {
   try {
     fs.cpSync(templatePath, projectPath, { recursive: true });
   } catch (err) {
-    console.error("Error copying files:", err);
+    console.error("Error Setting up project:", err);
     process.exit(1);
   }
 
@@ -97,7 +97,7 @@ if (args === "start") {
       dev: "station start",
     },
     dependencies: {
-      "station-x": "^2.0.0",
+      "station-x": "^3.0.0",
     },
     devDependencies: {},
   };

@@ -1,6 +1,7 @@
 import { IncomingMessage } from "http";
 import { parseRequest } from './parse.js';
 import { Context, HttpMethod, Route, RouteHandler } from '../utils/types.js';
+import { registerRoute, registry } from "./registry.js";
 
 
 
@@ -12,10 +13,27 @@ import { Context, HttpMethod, Route, RouteHandler } from '../utils/types.js';
  * @returns An object representing the route, including its path and handlers.
  */
 function route(path: string, handlers: RouteHandler): Route {
-  return {
+  const r = {
     path,
     handler: handlers
-  };
+  }
+  registerRoute(r)
+  return r
+}
+
+/**
+ * Defines a path to be used specifically within the array of the `use` grouped routes
+ *
+ * @param path - The URL path for the route.
+ * @param handlers - The handlers responsible for processing requests to the route.
+ * @returns An object representing the route, including its path and handlers.
+ */
+function path(path: string, handler: RouteHandler): Route {
+  const r = {
+    path,
+    handler
+  }
+  return r
 }
 
 
@@ -28,10 +46,16 @@ function route(path: string, handlers: RouteHandler): Route {
  * @returns A new array of routes with updated paths that include the base path.
  */
 function use(basePath: string, routes: Route[]): Route[] {
-  return routes.map(({ path: childPath, handler }) => ({
+  const paths = routes.map(({ path: childPath, handler }) => ({
     path: `${basePath}${childPath === '/' ? '' : childPath}`,
     handler: handler,
   }));
+
+  for (const r of paths) {
+    registerRoute(r)
+  }
+
+  return paths
 }
 
 /**
@@ -89,8 +113,9 @@ function matchPath(routePath: string, requestPath: string): { params: Record<str
  * The returned handler can either be a single-method function or a method-specific handler object.
  * The `params` object contains key-value pairs of route parameters extracted from the matched path.
  */
-function matchRoute(req: IncomingMessage, routes: Array<{ path: string, handler: RouteHandler }>): 
+function matchRoute(req: IncomingMessage): 
   { handler: (ctx: Context) => Promise<void>; params: Record<string, string> } | null {
+  const routes = registry.routes;
   const { pathname, method } = parseRequest(req);
 
   for (const route of routes) {
@@ -113,4 +138,4 @@ function matchRoute(req: IncomingMessage, routes: Array<{ path: string, handler:
   return null;
 }
 
-export { route, use, matchRoute };
+export { route, use, path, matchRoute };

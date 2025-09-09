@@ -1,17 +1,10 @@
 import { createServer, route } from 'station-x';
-import users from './src/users.js';
+import './modules/app/routes.js';
+import './middlewares/logger.js';
 
-const main = route('/home', {
-  GET: (ctx) => {
-    ctx.status(200).json({ message: 'Hello, World!' });
-  }
+route('/home', {
+  GET: (ctx) => ctx.status(200).json({ message: 'Hello, World!' })
 })
 
-
-const paths = [
-  ...users,
-  main,
-]
-
-const server = createServer(paths);
+const server = createServer();
 server.listen(3003);

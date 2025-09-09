@@ -3,9 +3,10 @@ import { readFile } from "fs/promises";
 import { createServer as _createServer } from "http";
 import path from "path";
 import { getMiddlewares, middlewareRegistry } from "../middlewares/middleware.js";
-import { contentTypes, Context, Route, ServerOptions, StatusCodes } from "../utils/types.js";
+import { contentTypes, Context, ServerOptions, StatusCodes } from "../utils/types.js";
 import { parseRequestBody } from "./parse.js";
 import { matchRoute } from "./route.js";
+import { HttpError } from "./errors.js";
 
 
 
@@ -26,7 +27,6 @@ import { matchRoute } from "./route.js";
  *
  */
 function createServer(
-  routes: Route[],
   options: ServerOptions = { publicDir: null, staticDir: null, mediaDir: null }
 ): object {
   const publicDir = path.join(options.publicDir || "views");
@@ -66,8 +66,6 @@ function createServer(
     // Execute middlewares
     const middlewares = middlewareRegistry.map((middleware) => middleware);
 
-    // console.log("middlewares: ", middlewares);
-
     let index = -1;
 
     const next = async () => {
@@ -79,7 +77,7 @@ function createServer(
         }
         const shouldContinue = await middleware.handler(ctx, next);
         if (!shouldContinue) {
-          return; // Stop further processing if middleware signals to stop
+          return; // Stop processing if middleware signals to stop
         }
       }
     };
@@ -92,22 +90,28 @@ function createServer(
     }
 
     // Match route
-    const match = matchRoute(req, routes);
+    const match = matchRoute(req);
     if (match) {
       try {
         ctx.params = match.params as Record<string, string>;
         await match.handler(ctx);
-        console.info(`${chalk.bgBlueBright('[INFO]')} ${req.method} - ${req.url} - STATUS ${ctx.statusCode || 200}`)
+        // console.log(result)
+        // ctx.send(result.data, "application/json")
         return;
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errorSource = (err instanceof HttpError && err.source) ? err.source : "server error";
+        const stackInfo = (err instanceof Error && err.stack) ? `\nStack Trace:\n${chalk.gray(err.stack)}` : "";
+        const errorMessage = (err instanceof Error) ? err.message : "An unknown error occurred";
+        const errorStatus = (err instanceof HttpError) ? err.status : 500;
         console.error(
-          `[ERROR] ${req.method} - ${req.url} - STATUS ${
-            err.status || 500
-          } - MESSAGE \n${chalk.redBright(err.message)}`
+          `[ERROR] [${errorSource.toUpperCase()}]` +
+          `\n${chalk.bgRed(" ")}  ${req.method} - ${req.url}` +
+          `\n${chalk.bgRed(" ")}  STATUS: ${errorStatus}` +
+          `\n${chalk.bgRed(" ")}  MESSAGE: ${chalk.redBright(errorMessage)}` +
+          stackInfo
         );
-        ctx
-          .status(err.status || 500)
-          .send(err.message || "Internal Server Error");
+        ctx.status(errorStatus);
+        ctx.send(errorMessage);
         return;
       }
     }
@@ -117,8 +121,10 @@ function createServer(
     const getPath = urlPath.split("/");
 
     const pathDir = getPath[1];
-    const fileFromPath = getPath[getPath.length - 1];
-    const fileType = fileFromPath.split(".")[1];
+    let fileType = path.extname(urlPath);
+    fileType = fileType.replace(".", "")
+
+    let filePath: string
 
     if (pathDir === "static") {
       try {
@@ -128,6 +134,7 @@ function createServer(
 
         const content = await readFile(absPath);
 
+
         const mimeType = contentTypes[fileType] || "application/octet-stream";
 
         ctx.res.writeHead(200, { "Content-Type": mimeType });
@@ -136,8 +143,7 @@ function createServer(
         return;
       } catch (error) {
         console.error(
-          `[ERROR] ${req.method} - ${req.url} - STATUS ${
-            error.status || 500
+          `[ERROR] ${req.method} - ${req.url} - STATUS ${error.status || 500
           } - MESSAGE \n${chalk.redBright(error.message)}`
         );
         ctx.res.writeHead(404, { "Content-Type": "text/plain" });
@@ -145,7 +151,6 @@ function createServer(
         return;
       }
     }
-
     if (pathDir === "media") {
       try {
         getPath.splice(1, 1);
@@ -163,8 +168,7 @@ function createServer(
         return;
       } catch (error) {
         console.error(
-          `[ERROR] ${req.method} - ${req.url} - STATUS ${
-            error.status || 500
+          `[ERROR] ${req.method} - ${req.url} - STATUS ${error.status || 500
           } - MESSAGE \n${chalk.redBright(error.message)}`
         );
         ctx.res.writeHead(404, { "Content-Type": "text/plain" });
@@ -172,12 +176,15 @@ function createServer(
         return;
       }
     }
-
-    const filePath = path.join(
-      process.cwd(),
-      publicDir,
-      req.url === "/" ? "index.html" : `${req.url}.html`
-    );
+    if (fileType) {
+      filePath = path.join(process.cwd(), urlPath)
+    } else {
+      filePath = path.join(
+        process.cwd(),
+        publicDir,
+        req.url === "/" ? "index.html" : `${req.url}.html`
+      );
+    }
     try {
       const absPath = path.resolve(filePath);
       const content = await readFile(absPath);
@@ -187,11 +194,10 @@ function createServer(
       console.info(`${chalk.bgBlueBright('[INFO]')} ${req.method} - ${req.url} - STATUS ${ctx.statusCode || 200}`)
     } catch (error) {
       console.error(
-        `[ERROR] ${req.method} - ${req.url} - STATUS ${
-          error.status || 500
+        `[ERROR] ${req.method} - ${req.url} - STATUS ${error.status || 404
         } - MESSAGE \n${chalk.redBright(error.message)}`
       );
-      ctx.res.writeHead(200, { "Content-Type": "text/html" });
+      ctx.res.writeHead(404, { "Content-Type": "text/html" });
       ctx.res.end("404: Page not found!");
     }
   });
