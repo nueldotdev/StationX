@@ -28,7 +28,7 @@ type Chainable<T, S> = S & {
 function withOptionals<T, S extends SXType<T>>(base: S): Chainable<T, S> {
   const wrapper: any = Object.assign(base, {
     optional() {
-      const parent = this;
+      const parent = this as unknown as SXType<any>;
       return withOptionals({
         ...parent,
         parse(value: unknown) {
@@ -42,7 +42,7 @@ function withOptionals<T, S extends SXType<T>>(base: S): Chainable<T, S> {
       });
     },
     nullable() {
-      const parent = this;
+      const parent = this as unknown as SXType<any>;
       return withOptionals({
         ...parent,
         parse(value: unknown) {
@@ -56,7 +56,7 @@ function withOptionals<T, S extends SXType<T>>(base: S): Chainable<T, S> {
       });
     },
     default(defaultValue: T) {
-      const parent = this;
+      const parent = this as unknown as SXType<any>;
       return withOptionals({
         ...parent,
         parse(value: unknown) {

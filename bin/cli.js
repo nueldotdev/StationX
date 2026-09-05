@@ -97,7 +97,7 @@ if (args === "start") {
       dev: "station start",
     },
     dependencies: {
-      "station-x": "^3.0.0",
+      "station-x": "^3.0.1",
     },
     devDependencies: {},
   };

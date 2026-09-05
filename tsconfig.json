@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "target": "ESNext",
     "outDir": "dist",
     "rootDir": "src",
     "allowJs": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "declaration": true
+    "declaration": true,
+    "types": ["node"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "bin", "template", "dist"]

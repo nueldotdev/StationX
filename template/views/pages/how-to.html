@@ -10,45 +10,49 @@
 </head>
 <body>
   <div class="container">
-    <h1>How StationX Works</h1>
+    <header class="page-header">
+      <p class="eyebrow">StationX guide</p>
+      <h1>How StationX Works</h1>
+      <p class="intro">A quick tour of routing, file serving, and the development workflow in a StationX app.</p>
+    </header>
     <div class="content">
-      <section>
+      <section class="guide-section">
         <h2>1. Defining Routes with <code>route</code></h2>
         <p>The <code>route</code> function is the core of StationX. It allows you to define individual routes and their handlers. Here's an example:</p>
         <pre><code>import { route } from 'station-x';
 
-const homeRoute = route('/home', {
+route('/home', {
   GET: (ctx) => {
-    return { body: { message: 'Welcome to StationX!' }, status: 200 };
+    ctx.status(200).json({ message: 'Welcome to StationX!' });
   }
 });</code></pre>
         <p>Each route can handle multiple HTTP methods (e.g., GET, POST, DELETE) by defining them as keys in the handler object.</p>
       </section>
 
-      <section>
+      <section class="guide-section">
         <h2>2. Grouping Routes with <code>use</code></h2>
         <p>StationX allows you to group related routes under a base path using the <code>use</code> function:</p>
-        <pre><code>import { use, route } from 'station-x';
+        <pre><code>import { path, use } from 'station-x';
 
-const userRoutes = use('/users', [
-  route('/', {
+use('/users', [
+  path('/', {
     GET: (ctx) => {
-      return { body: { message: 'List of users' }, status: 200 };
+      ctx.status(200).json({ message: 'List of users' });
     },
     POST: (ctx) => {
-      return { body: { message: 'User created' }, status: 201 };
+      ctx.status(201).json({ message: 'User created' });
     }
   }),
-  route('/@id', {
+  path('/@id', {
     GET: (ctx) => {
-      return { body: { message: `User with ID: ${ctx.params.id}` }, status: 200 };
+      ctx.status(200).json({ message: `User with ID: ${ctx.params.id}` });
     }
   })
 ]);</code></pre>
         <p>The <code>@id</code> syntax allows you to define dynamic parameters in your routes.</p>
       </section>
 
-      <section>
+      <section class="guide-section">
         <h2>3. Serving HTML Pages</h2>
         <p>StationX supports file-based routing for serving HTML pages. By default, it looks for files in the <code>views</code> directory. For example:</p>
         <pre><code>// Accessing http://localhost:3000/about
@@ -56,14 +60,14 @@ const userRoutes = use('/users', [
         <p>You can customize the directory by passing options when creating the server.</p>
       </section>
 
-      <section>
+      <section class="guide-section">
         <h2>4. Hot Reloading</h2>
         <p>StationX includes a hot reloading feature to automatically restart the server when you make changes to your code:</p>
         <pre><code>station start</code></pre>
         <p>This ensures a smooth development experience without manual restarts.</p>
       </section>
 
-      <section>
+      <section class="guide-section">
         <h2>5. Customizing Static and Media Directories</h2>
         <p>You can customize where StationX looks for static files (e.g., CSS, JS) and media files (e.g., images) by providing options:</p>
         <pre><code>import { createServer } from 'station-x';
@@ -74,31 +78,29 @@ const options = {
   mediaDir: 'media' // Directory for images/videos
 };
 
-const server = createServer(routes, options);
+const server = createServer(options);
 server.listen(3000);</code></pre>
         <p>With this setup, you can organize your project however you like.</p>
       </section>
 
-      <section>
+      <section class="guide-section">
         <h2>6. Putting It All Together</h2>
         <p>Here's a complete example of a StationX server:</p>
-        <pre><code>import { createServer, route, use } from 'station-x';
+        <pre><code>import { createServer, path, route, use } from 'station-x';
 
-const homeRoute = route('/home', {
+      route('/home', {
   GET: (ctx) => {
-    return { body: { message: 'Welcome to StationX!' }, status: 200 };
+          ctx.status(200).json({ message: 'Welcome to StationX!' });
   }
 });
 
-const userRoutes = use('/users', [
-  route('/', {
+use('/users', [
+  path('/', {
     GET: (ctx) => {
-      return { body: { message: 'List of users' }, status: 200 };
+      ctx.status(200).json({ message: 'List of users' });
     }
   })
 ]);
-
-const routes = [homeRoute, ...userRoutes];
 
 const options = {
   publicDir: 'views',
@@ -106,7 +108,7 @@ const options = {
   mediaDir: 'media'
 };
 
-const server = createServer(routes, options);
+const server = createServer(options);
 server.listen(3000, () => {
   console.log('Server is running on http://localhost:3000');
 });</code></pre>

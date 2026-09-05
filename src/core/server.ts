@@ -72,7 +72,7 @@ function createServer(
       index++;
       if (index < middlewares.length) {
         const middleware = middlewares[index];
-        if (middleware.ignore && middleware.ignore.includes(req.url)) {
+        if (middleware.ignore && middleware.ignore.includes(req.url || "")) {
           return next(); // Skip this middleware and call the next one
         }
         const shouldContinue = await middleware.handler(ctx, next);
@@ -141,10 +141,15 @@ function createServer(
         ctx.res.end(content);
         console.info(`${chalk.bgBlueBright('[INFO]')} ${req.method} - ${req.url} - STATUS ${ctx.statusCode || 200}`)
         return;
-      } catch (error) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStatus =
+          typeof error === "object" && error !== null && "status" in error && typeof error.status === "number"
+            ? error.status
+            : 500;
         console.error(
-          `[ERROR] ${req.method} - ${req.url} - STATUS ${error.status || 500
-          } - MESSAGE \n${chalk.redBright(error.message)}`
+          `[ERROR] ${req.method} - ${req.url} - STATUS ${errorStatus
+          } - MESSAGE \n${chalk.redBright(errorMessage)}`
         );
         ctx.res.writeHead(404, { "Content-Type": "text/plain" });
         ctx.res.end(`404: Static file not found on server \n${error}`);
@@ -166,10 +171,15 @@ function createServer(
         console.info(`${chalk.bgBlueBright('[INFO]')} ${req.method} - ${req.url} - STATUS ${ctx.statusCode
           || 200}`)
         return;
-      } catch (error) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStatus =
+          typeof error === "object" && error !== null && "status" in error && typeof error.status === "number"
+            ? error.status
+            : 500;
         console.error(
-          `[ERROR] ${req.method} - ${req.url} - STATUS ${error.status || 500
-          } - MESSAGE \n${chalk.redBright(error.message)}`
+          `[ERROR] ${req.method} - ${req.url} - STATUS ${errorStatus
+          } - MESSAGE \n${chalk.redBright(errorMessage)}`
         );
         ctx.res.writeHead(404, { "Content-Type": "text/plain" });
         ctx.res.end(`404: Media file not found on server \n${error}`);
@@ -192,10 +202,15 @@ function createServer(
       ctx.res.writeHead(200, { "Content-Type": "text/html" });
       ctx.res.end(content);
       console.info(`${chalk.bgBlueBright('[INFO]')} ${req.method} - ${req.url} - STATUS ${ctx.statusCode || 200}`)
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStatus =
+        typeof error === "object" && error !== null && "status" in error && typeof error.status === "number"
+          ? error.status
+          : 404;
       console.error(
-        `[ERROR] ${req.method} - ${req.url} - STATUS ${error.status || 404
-        } - MESSAGE \n${chalk.redBright(error.message)}`
+        `[ERROR] ${req.method} - ${req.url} - STATUS ${errorStatus
+        } - MESSAGE \n${chalk.redBright(errorMessage)}`
       );
       ctx.res.writeHead(404, { "Content-Type": "text/html" });
       ctx.res.end("404: Page not found!");
