@@ -2,6 +2,12 @@
 
 All notable changes to StationX are documented here.
 
+## [Unreleased]
+
+### Fixed
+
+- How-to page content is no longer clipped by the shared fixed-height layout and can scroll normally.
+
 ## [3.0.2]
 
 ### Added

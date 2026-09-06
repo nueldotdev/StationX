@@ -5,14 +5,19 @@ body {
   color: var(--subtitle-color);
   overflow-y: auto;
   display: block;
+  height: auto;
+  min-height: 100vh;
+  width: 100%;
 }
 
 .container {
   width: min(100%, 1080px);
   min-height: 100vh;
+  height: auto;
   margin: 0 auto;
   padding: 4rem 1.5rem 2rem;
   display: block;
+  overflow: visible;
 }
 
 .page-header {
