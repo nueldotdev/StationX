@@ -2,7 +2,7 @@
 
 All notable changes to StationX are documented here.
 
-## [Unreleased]
+## [3.0.3]
 
 ### Fixed
 
