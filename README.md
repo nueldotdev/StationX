@@ -8,15 +8,15 @@ I built StationX to understand what actually happens inside a framework like Exp
 
 ## Features
 
-- **Routing** — Define routes with `route()` or group them under a base path with `use()` and `path()`
+- **Routing** — Define routes with `route()` or group them under a base path with `route.group()`
 - **Dynamic params** — Capture URL segments with `@param` syntax (`/@id` → `ctx.params.id`)
 - **Schema validation** — Built-in `sx` library with a chainable API (string, number, boolean, date, array, object, email, minLength, positive, default, optional...)
 - **Middleware pipeline** — `createMiddleware()` with per-path ignore rules, runs before and after route handlers. Auto-loaded from the `middlewares/` directory
 - **Logging** — Built-in `log` utility (`log.title()`) for formatted console output
 - **Static file serving** — HTML views, static assets, and media files served from configurable directories
 - **Environment management** — `sxEnv.load()` / `sxEnv.get()` for `.env` handling
-- **Hot reloading** — `stationx start` watches for file changes and restarts automatically
-- **CLI scaffolding** — `stationx init <name>` generates a new project with modular structure
+- **Hot reloading** — `station start` watches for file changes and restarts automatically
+- **CLI scaffolding** — `station init <name>` generates a new project with modular structure
 
 ---
 
@@ -24,7 +24,7 @@ I built StationX to understand what actually happens inside a framework like Exp
 
 ```bash
 # Scaffold a new project
-stationx init my-app
+station init my-app
 
 # Navigate into it
 cd my-app
@@ -33,7 +33,7 @@ cd my-app
 pnpm install
 
 # Start with hot reloading
-stationx start
+station start
 ```
 
 Or install directly:
@@ -59,31 +59,29 @@ route('/hello', {
 ### Grouped routes with dynamic params
 
 ```ts
-import { use, path } from 'station-x';
+import { route } from 'station-x';
 import { userSchema } from './modules/users/schema.js';
 
-const userRoutes = use('/users', [
-  path('/', {
-    GET: (ctx) => {
-      ctx.status(200).json({ users: [{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }] });
-    },
-    POST: (ctx) => {
-      try {
-        const newUser = userSchema.parse(ctx.body);
-        ctx.status(201).json({ message: 'User created', user: newUser });
-      } catch (error) {
-        ctx.status(400).json({ errors: error.errors });
-      }
+route.group('/users', (users) => {
+  users.get('/', (ctx) => {
+    ctx.status(200).json({ users: [{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }] });
+  });
+  users.post('/', (ctx) => {
+    try {
+      const newUser = userSchema.parse(ctx.body);
+      ctx.status(201).json({ message: 'User created', user: newUser });
+    } catch (error) {
+      ctx.status(400).error(error.message);
     }
-  }),
-  path('/@id', {
-    GET: (ctx) => {
-      const { id } = ctx.params; // @id maps to ctx.params.id
-      ctx.status(200).json({ id });
-    }
-  })
-]);
+  });
+  users.get('/@id', (ctx) => {
+    const { id } = ctx.params;
+    ctx.status(200).json({ id });
+  });
+});
 ```
+
+Routes with the same path may define different methods, but defining the same method and path twice throws a clear configuration error.
 
 ### Schema validation with `sx`
 
@@ -108,6 +106,13 @@ try {
 ```
 
 Available validators: `string`, `number`, `boolean`, `date`, `array`, `object`. Chainable modifiers: `minLength`, `maxLength`, `email`, `positive`, `int`, `optional`, `default`.
+
+Route handlers can send consistent JSON errors by setting the status and calling `ctx.error(message)`:
+
+```ts
+ctx.status(400).error('Invalid request body');
+// Sends: { "error": "Invalid request body" }
+```
 
 ### Middleware
 

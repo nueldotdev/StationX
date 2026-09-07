@@ -1,6 +1,7 @@
 import { watch } from 'chokidar';
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
+import { pathToFileURL } from 'url';
 import chalk from 'chalk';
 
 let reloadAmount = 0;
@@ -16,14 +17,24 @@ function startServer(entryFile: string): ChildProcess {
     reloadAmount++;
   }
 
-  const server = spawn('node', [entryFile], { stdio: 'inherit' });
+  const entryUrl = pathToFileURL(path.resolve(entryFile)).href;
+  const bootstrap = `import(${JSON.stringify(entryUrl)}).catch((error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error && error.stack ? error.stack : '';
+      const location = stack.split('\\n').find((line) => line.trim().startsWith('at '));
+      console.error('\\n✖ Server failed to start');
+      console.error('  ' + message);
+      if (location) console.error('  ' + location.trim());
+    process.exitCode = 1;
+  });`;
+  const server = spawn('node', ['--input-type=module', '-e', bootstrap], { stdio: 'inherit' });
 
   server.on('exit', (code: number | null) => {
     if (code === 0 || code === null) {
       console.log(chalk.bgBlackBright(`✅ Server stopped gracefully.`));
       console.log(chalk.bgBlackBright(`🚀 Starting Server...`));
     } else {
-      console.error(chalk.red(`⚠️ Server terminated with exit code ${code}.`));
+      console.error(chalk.red(`⚠ Server stopped unexpectedly (exit code ${code}).`));
     }
   });
 

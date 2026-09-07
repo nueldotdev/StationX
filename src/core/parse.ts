@@ -1,4 +1,3 @@
-import url from 'url';
 import { IncomingMessage } from 'http';
 
 interface ParsedRequest {
@@ -8,7 +7,9 @@ interface ParsedRequest {
 }
 
 function parseRequest(req: IncomingMessage): ParsedRequest {
-  const { pathname, query } = url.parse(req.url || '', true); // Parse the URL and query string
+  const requestUrl = new URL(req.url || '/', 'http://localhost');
+  const pathname = requestUrl.pathname;
+  const query = Object.fromEntries(requestUrl.searchParams.entries());
   const method = req.method?.toUpperCase() || ''; // Normalize the HTTP method
   return { pathname, method, query };
 }

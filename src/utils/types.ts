@@ -5,7 +5,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS'
 
 // Create a type for route handlers that ensures type safety
 export type RouteHandler = {
-  [Method in HttpMethod]?: (ctx: Context) => Promise<void>;
+  [Method in HttpMethod]?: (ctx: Context) => Promise<void> | void;
 };
 
 
@@ -104,6 +104,12 @@ interface Context {
    * @param data - The data to send as a JSON response.
    */
   json: (data: any) => void;
+
+  /**
+    * Sends a JSON error response using the current context status code.
+   * @param message - The error message returned to the client.
+   */
+    error: (message: string) => void;
 
   /**
    * Sends a plain text response.

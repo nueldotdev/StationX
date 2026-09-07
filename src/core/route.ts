@@ -3,6 +3,20 @@ import { parseRequest } from './parse.js';
 import { Context, HttpMethod, Route, RouteHandler } from '../utils/types.js';
 import { registerRoute, registry } from "./registry.js";
 
+type GroupRouteHandler = (ctx: Context) => Promise<void> | void;
+
+type GroupRouteBuilder = {
+  get(path: string, handler: GroupRouteHandler): GroupRouteBuilder;
+  post(path: string, handler: GroupRouteHandler): GroupRouteBuilder;
+  put(path: string, handler: GroupRouteHandler): GroupRouteBuilder;
+  patch(path: string, handler: GroupRouteHandler): GroupRouteBuilder;
+  delete(path: string, handler: GroupRouteHandler): GroupRouteBuilder;
+  options(path: string, handler: GroupRouteHandler): GroupRouteBuilder;
+  head(path: string, handler: GroupRouteHandler): GroupRouteBuilder;
+};
+
+type GroupRouteConfigurator = (group: GroupRouteBuilder) => void;
+
 
 
 /**
@@ -56,6 +70,45 @@ function use(basePath: string, routes: Route[]): Route[] {
   }
 
   return paths
+}
+
+/**
+ * Registers related routes under a shared base path without requiring a
+ * method map for every endpoint.
+ */
+function createGroup(basePath: string, configure: GroupRouteConfigurator): Route[] {
+  const groupedRoutes = new Map<string, RouteHandler>();
+  const methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"] as const;
+
+  const addRoute = (method: typeof methods[number], childPath: string, handler: GroupRouteHandler) => {
+    const routePath = `${basePath}${childPath === '/' ? '' : childPath}`;
+    const handlers = groupedRoutes.get(routePath) || {};
+    if (handlers[method]) {
+      throw new Error(`Route "${method} ${routePath}" is already defined within this group. Please use a different path or HTTP method.`);
+    }
+    handlers[method] = handler;
+    groupedRoutes.set(routePath, handlers);
+    return builder;
+  };
+
+  const builder: GroupRouteBuilder = {
+    get: (path, handler) => addRoute("GET", path, handler),
+    post: (path, handler) => addRoute("POST", path, handler),
+    put: (path, handler) => addRoute("PUT", path, handler),
+    patch: (path, handler) => addRoute("PATCH", path, handler),
+    delete: (path, handler) => addRoute("DELETE", path, handler),
+    options: (path, handler) => addRoute("OPTIONS", path, handler),
+    head: (path, handler) => addRoute("HEAD", path, handler),
+  };
+
+  configure(builder);
+
+  const routes = Array.from(groupedRoutes, ([path, handler]) => ({ path, handler }));
+  for (const route of routes) {
+    registerRoute(route);
+  }
+
+  return routes;
 }
 
 /**
@@ -114,7 +167,7 @@ function matchPath(routePath: string, requestPath: string): { params: Record<str
  * The `params` object contains key-value pairs of route parameters extracted from the matched path.
  */
 function matchRoute(req: IncomingMessage): 
-  { handler: (ctx: Context) => Promise<void>; params: Record<string, string> } | null {
+  { handler: (ctx: Context) => Promise<void> | void; params: Record<string, string> } | null {
   const routes = registry.routes;
   const { pathname, method } = parseRequest(req);
 
@@ -136,6 +189,11 @@ function matchRoute(req: IncomingMessage):
   }
 
   return null;
+}
+
+namespace route {
+  export const group = (basePath: string, configure: GroupRouteConfigurator) =>
+    createGroup(basePath, configure);
 }
 
 export { route, use, path, matchRoute };

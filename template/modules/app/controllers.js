@@ -5,7 +5,11 @@
  * 
  * @param {import("station-x").Context} ctx 
  */
-export const initialEndpoint = (ctx) => {
-    ctx.status(200).json({ message: 'Welcome to app!' })
-}
+export const initialEndpoint = {
+    GET: (ctx) => ctx.status(200).json({ message: 'Hello, World!' }),
 
+    POST: (ctx) => {
+        const data = ctx.body;
+        ctx.status(200).json({ message: 'Data received', data });
+    }
+}

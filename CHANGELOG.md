@@ -2,6 +2,30 @@
 
 All notable changes to StationX are documented here.
 
+## [3.1.0]
+
+### Added
+
+- Added `route.group()` for Express-style grouped routing with fluent methods such as `group.get()` and `group.post()`.
+- Grouped routes now merge methods for the same path before registration.
+- Added `ctx.error(message)` for consistent JSON error responses, using the status set with `ctx.status()`.
+- Synchronous route handlers are now supported alongside asynchronous handlers.
+
+### Fixed
+
+- Duplicate HTTP methods on the same grouped route now fail with a clear route-specific error instead of silently replacing the previous handler.
+- Replaced deprecated `url.parse()` usage with the WHATWG `URL` API.
+- Prevented secondary `ERR_HTTP_HEADERS_SENT` crashes when an error occurs after a response has started.
+
+### Changed
+
+- Refreshed the generated home and how-to pages with a production-ready graphite, teal, coral, and amber visual system.
+- Improved template page structure with semantic navigation, accessible logo text, responsive spacing, and dedicated code typography.
+- Refreshed terminal request errors with compact colored status lines and the first actionable user-code source location.
+- Prevented secondary `ERR_HTTP_HEADERS_SENT` crashes when an error occurs after a response has started.
+- Improved hot-reload process messages so unexpected runtime exits are distinguished from startup failures.
+- Improved startup failures with concise messages and the first actionable user-code source location.
+
 ## [3.0.3]
 
 ### Fixed

@@ -1,7 +1,9 @@
 @import './style.css';
 
 body {
-  background: var(--text-color);
+  background-color: var(--background-color);
+  background-image: linear-gradient(rgba(69, 214, 194, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(69, 214, 194, 0.035) 1px, transparent 1px);
+  background-size: 42px 42px;
   color: var(--subtitle-color);
   overflow-y: auto;
   display: block;
@@ -26,9 +28,19 @@ body {
   text-align: center;
 }
 
+.page-header::after {
+  display: block;
+  width: 72px;
+  height: 3px;
+  margin: 1.5rem auto 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary-color), var(--coral-color));
+  content: '';
+}
+
 .eyebrow {
   margin-bottom: 0.75rem;
-  color: var(--primary-color);
+  color: var(--coral-color);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -54,10 +66,19 @@ body {
 .guide-section {
   margin-bottom: 1.25rem;
   padding: 1.5rem;
-  border: 1px solid rgba(194, 209, 223, 0.14);
+  border: 1px solid var(--line-color);
   border-left: 3px solid var(--primary-color);
   border-radius: 8px;
-  background: rgba(20, 22, 24, 0.72);
+  background: var(--surface-color);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14);
+}
+
+.guide-section:nth-child(2n) {
+  border-left-color: var(--coral-color);
+}
+
+.guide-section:nth-child(3n) {
+  border-left-color: var(--amber-color);
 }
 
 .guide-section:last-child {
@@ -107,15 +128,16 @@ pre {
   margin: 1.25rem 0;
   padding: 1.1rem 1.2rem;
   border-radius: 4px;
-  border: 1px solid rgba(194, 209, 223, 0.1);
+  border: 1px solid rgba(69, 214, 194, 0.18);
   overflow-x: auto;
-  color: #e6edf3;
+  color: #e4f0ee;
+  font-family: "DM Mono", monospace;
   font-size: 0.88rem;
   line-height: 1.65;
 }
 
 code {
-  font-family: "Courier New", Courier, monospace;
+  font-family: "DM Mono", monospace;
   background: var(--code-color);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
@@ -132,7 +154,7 @@ pre code {
 }
 
 .footer a {
-  color: var(--primary-color);
+  color: var(--coral-color);
   text-decoration: none;
 }
 

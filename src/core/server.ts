@@ -8,6 +8,31 @@ import { parseRequestBody } from "./parse.js";
 import { matchRoute } from "./route.js";
 import { HttpError } from "./errors.js";
 
+function logRouteError(
+  req: import("http").IncomingMessage,
+  error: unknown,
+): void {
+  const errorSource = error instanceof HttpError && error.source ? error.source : "server";
+  const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+  const errorStatus = error instanceof HttpError ? error.status : 500;
+  const statusLabel = errorStatus >= 500
+    ? chalk.redBright(`${errorStatus}`)
+    : chalk.yellow(`${errorStatus}`);
+  const sourceFrame = error instanceof Error && error.stack
+    ? error.stack
+      .split("\n")
+      .slice(1)
+      .find((line) => !line.includes("/StationX/dist/") && !line.includes("node:"))
+    : "";
+
+  console.error(
+    `${chalk.redBright("✖ Request failed")} ${chalk.gray(`[${errorSource}]`)}\n` +
+    `  ${chalk.white(`${req.method} ${req.url}`)} ${statusLabel}\n` +
+    `  ${chalk.red(errorMessage)}` +
+    (sourceFrame ? `\n  ${chalk.gray(sourceFrame.trim())}` : ""),
+  );
+}
+
 
 
 /**
@@ -51,13 +76,23 @@ function createServer(
       },
 
       json(data: any) {
+        if (this.res.headersSent) {
+          return;
+        }
         this.res.writeHead(this.statusCode, {
           "Content-Type": "application/json",
         });
         this.res.end(JSON.stringify(data));
       },
 
+      error(message: string) {
+        this.json({ error: message });
+      },
+
       send(data: string, contentType = "text/plain") {
+        if (this.res.headersSent) {
+          return;
+        }
         this.res.writeHead(this.statusCode, { "Content-Type": contentType });
         this.res.end(data);
       },
@@ -99,19 +134,10 @@ function createServer(
         // ctx.send(result.data, "application/json")
         return;
       } catch (err: unknown) {
-        const errorSource = (err instanceof HttpError && err.source) ? err.source : "server error";
-        const stackInfo = (err instanceof Error && err.stack) ? `\nStack Trace:\n${chalk.gray(err.stack)}` : "";
-        const errorMessage = (err instanceof Error) ? err.message : "An unknown error occurred";
-        const errorStatus = (err instanceof HttpError) ? err.status : 500;
-        console.error(
-          `[ERROR] [${errorSource.toUpperCase()}]` +
-          `\n${chalk.bgRed(" ")}  ${req.method} - ${req.url}` +
-          `\n${chalk.bgRed(" ")}  STATUS: ${errorStatus}` +
-          `\n${chalk.bgRed(" ")}  MESSAGE: ${chalk.redBright(errorMessage)}` +
-          stackInfo
-        );
-        ctx.status(errorStatus);
-        ctx.send(errorMessage);
+        const errorStatus = err instanceof HttpError ? err.status : 500;
+        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+        logRouteError(req, err);
+        ctx.status(errorStatus).error(errorMessage);
         return;
       }
     }
